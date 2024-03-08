@@ -142,7 +142,9 @@ for epoch in range(config.epochs):
         x_train, y_train = data  # 解包迭代器中的X和Y
         optimizer.zero_grad()
 
-        y_train_pred = model(x_train)
+        print(x_train.shape, y_train.shape)
+
+        y_train_pred, _ = model(x_train)
         loss = loss_function(y_train_pred, y_train.reshape(-1, 1))
         loss.backward()
         optimizer.step()
@@ -159,7 +161,7 @@ for epoch in range(config.epochs):
         test_bar = tqdm(test_loader)
         for data in test_bar:
             x_test, y_test = data
-            y_test_pred = model(x_test)
+            y_test_pred, _ = model(x_test)
             test_loss = loss_function(y_test_pred, y_test.reshape(-1, 1))
 
     if test_loss < config.best_loss:
@@ -173,7 +175,7 @@ plot_size = 200
 plt.figure(figsize=(12, 8))
 plt.plot(
     scaler.inverse_transform(
-        (model(x_train_tensor).detach().numpy()[:plot_size]).reshape(-1, 1)
+        (model(x_train_tensor)[1].detach().numpy()[:plot_size]).reshape(-1, 1)
     ),
     "b",
 )

@@ -126,9 +126,15 @@ class GRU(nn.Module):
 
 
 # model = GRU(config.feature_size, config.hidden_size, config.num_layers, config.output_size)  # 定义GRU网络
-model = MinimalRNNCell(
-    config.feature_size, config.hidden_size, config.output_size
-)  # 定义GRU网络
+model = MinimalRNN(
+    config.feature_size,
+    config.hidden_size,
+    config.output_size,
+    config.num_layers,
+    True,
+    0.0,
+    "cpu",
+)
 
 loss_function = nn.MSELoss()  # 定义损失函数
 optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)  # 定义优化器
@@ -141,7 +147,6 @@ for epoch in range(config.epochs):
     for data in train_bar:
         x_train, y_train = data  # 解包迭代器中的X和Y
         optimizer.zero_grad()
-
         y_train_pred = model(x_train)
         loss = loss_function(y_train_pred, y_train.reshape(-1, 1))
         loss.backward()

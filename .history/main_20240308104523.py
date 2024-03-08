@@ -142,6 +142,8 @@ for epoch in range(config.epochs):
         x_train, y_train = data  # 解包迭代器中的X和Y
         optimizer.zero_grad()
 
+        print(x_train.shape, y_train.shape)
+
         y_train_pred = model(x_train)
         loss = loss_function(y_train_pred, y_train.reshape(-1, 1))
         loss.backward()
