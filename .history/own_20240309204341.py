@@ -29,7 +29,9 @@ config = Config()
 
 # scaler = MinMaxScaler()
 
-train_dataset, test_dataset = getDataset(transforms=None, timestep=config.timestep)
+train_dataset, test_dataset = getDataset(
+    '''transforms=scaler.fit_transform'''transforms=None, timestep=config.timestep
+)
 train_data = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 test_data = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 

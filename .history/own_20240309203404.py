@@ -27,9 +27,10 @@ class Config:
 
 config = Config()
 
-# scaler = MinMaxScaler()
-
-train_dataset, test_dataset = getDataset(transforms=None, timestep=config.timestep)
+scaler = MinMaxScaler()
+train_dataset, test_dataset = getDataset(
+    transforms=scaler.fit_transform, timestep=config.timestep
+)
 train_data = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 test_data = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
@@ -51,7 +52,7 @@ model = GRU(
 
 
 loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
 for epoch in range(config.epochs):
     model.train()
@@ -126,6 +127,8 @@ plt.show()
 
 
 for target_x, target_y in test_data:
+    target_x = scaler.inverse_transform(target_x.cpu().detach().numpy())
+    target_y = scaler.inverse_transform(target_y.cpu().detach().numpy())
     target_x = target_x.to(config.device)
     target_y = target_y.to(config.device)
     y_pred = model(target_x)

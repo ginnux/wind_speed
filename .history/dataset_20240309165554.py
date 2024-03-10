@@ -10,11 +10,24 @@ class WindDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         filepath="./data/wind_dataset.csv",
-        data=None,
+        transforms=None,
         timestep=1,
+        istest=False,
+        test_persent=0.2,
     ):
-        self.data = data
+        self.df = pd.read_csv(filepath, index_col=0)
+        self.data = np.array(self.df["WIND"]).reshape(-1, 1)
+        self.transforms = transforms
         self.timestep = timestep
+        if transforms is not None:
+            self.data = self.transforms(self.data)
+
+        self.length = self.__len__()
+        if istest:
+            self.data = self.data[-int(self.length * test_persent) :]
+        else:
+            self.data = self.data[: -int(self.length * test_persent)]
+
         self.data = torch.FloatTensor(self.data)
 
     def __len__(self):
@@ -24,24 +37,3 @@ class WindDataset(torch.utils.data.Dataset):
         inputs = self.data[idx : idx + self.timestep]
         target = self.data[idx + self.timestep]
         return inputs, target
-
-
-def getDataset(
-    path="./data/wind_dataset.csv",
-    transforms=None,
-    timestep=1,
-    test_persent=0.2,
-):
-    df = pd.read_csv(path, index_col=0)
-    data = np.array(df["WIND"]).reshape(-1, 1)
-    if transforms is not None:
-        data = transforms(data)
-
-    train_length = int(len(data) * (1 - test_persent))
-    train_data = data[:train_length]
-    test_data = data[train_length:]
-
-    train_Dataset = WindDataset(data=train_data, timestep=timestep)
-    test_Dataset = WindDataset(data=test_data, timestep=timestep)
-
-    return train_Dataset, test_Dataset

@@ -27,9 +27,10 @@ class Config:
 
 config = Config()
 
-# scaler = MinMaxScaler()
-
-train_dataset, test_dataset = getDataset(transforms=None, timestep=config.timestep)
+scaler = MinMaxScaler()
+train_dataset, test_dataset = getDataset(
+    transforms=scaler.fit_transform, timestep=config.timestep
+)
 train_data = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 test_data = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
@@ -51,7 +52,7 @@ model = GRU(
 
 
 loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
 for epoch in range(config.epochs):
     model.train()
@@ -87,7 +88,7 @@ for epoch in range(config.epochs):
 
 print("Finished Training")
 
-"""
+
 target_data = test_dataset.data
 target_data = scaler.inverse_transform(target_data)
 input_percent = 0.8
@@ -122,16 +123,3 @@ plt.plot(target_linespace, target_data, "b")
 plt.plot(predicted_linespace, predicted_data, "r")
 plt.legend()
 plt.show()
-"""
-
-
-for target_x, target_y in test_data:
-    target_x = target_x.to(config.device)
-    target_y = target_y.to(config.device)
-    y_pred = model(target_x)
-    plt.figure(figsize=(12, 8))
-    plt.plot(y_pred.cpu().detach().numpy(), "b")
-    plt.plot(target_y.cpu().detach().numpy().reshape(-1, 1), "r")
-    plt.legend()
-    plt.show()
-    break

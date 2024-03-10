@@ -27,9 +27,10 @@ class Config:
 
 config = Config()
 
-# scaler = MinMaxScaler()
-
-train_dataset, test_dataset = getDataset(transforms=None, timestep=config.timestep)
+scaler = MinMaxScaler()
+train_dataset, test_dataset = getDataset(
+    transforms=scaler.fit_transform, timestep=config.timestep
+)
 train_data = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 test_data = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
@@ -130,8 +131,10 @@ for target_x, target_y in test_data:
     target_y = target_y.to(config.device)
     y_pred = model(target_x)
     plt.figure(figsize=(12, 8))
-    plt.plot(y_pred.cpu().detach().numpy(), "b")
-    plt.plot(target_y.cpu().detach().numpy().reshape(-1, 1), "r")
+    plt.plot(scaler.inverse_transform(y_pred.cpu().detach().numpy()), "b")
+    plt.plot(
+        scaler.inverse_transform(target_y.cpu().detach().numpy().reshape(-1, 1)), "r"
+    )
     plt.legend()
     plt.show()
     break

@@ -92,7 +92,7 @@ class MinimalRNNCell(nn.Module):
             if self.batch_first:
                 outs = outs.transpose(0, 1)
 
-        return outs, h
+        return outs
 
 
 # 将MinimalRNNCell扩展为多层RNN
@@ -143,7 +143,7 @@ class MinimalRNN(nn.Module):
 
 
 class ApplyModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers, device):
+    def __init__(self, input_size, hidden_size, output_size, device):
         super(ApplyModel, self).__init__()
 
         self.input_size = input_size
@@ -154,63 +154,9 @@ class ApplyModel(nn.Module):
         self.rnn = MinimalRNN(
             input_size=input_size,
             hidden_size=hidden_size,
-            output_size=hidden_size,
-            num_layers=num_layers,
-            batch_first=True,
+            output_size=output_size,
             device=device,
         )
-        self.fc = nn.Linear(hidden_size, output_size, device=device)
 
-    def forward(self, inputs, h=None):
-        # input (Num, Length, input_size)
-        # output1 (Num, Length, hidden_size)
-        # output2 (Num, Length, output_size)
-
-        outputs, h = self.rnn(inputs, h)
-        outputs = outputs.reshape(-1, self.hidden_size)
-        outputs = self.fc(outputs)
-        outputs = outputs.reshape(inputs.size(1), -1, self.output_size)
-        # output (Length, Num, output_size)
-
-        return outputs[-1]
-
-
-class GRU(nn.Module):
-    def __init__(self, feature_size, hidden_size, num_layers, output_size):
-        super(GRU, self).__init__()
-        self.hidden_size = hidden_size  # 隐层大小
-        self.num_layers = num_layers  # gru层数
-        # feature_size为特征维度，就是每个时间点对应的特征数量，这里为1
-        self.gru = nn.GRU(feature_size, hidden_size, num_layers, batch_first=True)
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x, hidden=None):
-        batch_size = x.shape[0]  # 获取批次大小
-
-        # 初始化隐层状态
-        if hidden is None:
-            h_0 = (
-                x.data.new(self.num_layers, batch_size, self.hidden_size)
-                .fill_(0)
-                .float()
-            )
-        else:
-            h_0 = hidden
-
-        # GRU运算
-        output, h_0 = self.gru(x, h_0)
-
-        # 获取GRU输出的维度信息
-        batch_size, timestep, hidden_size = output.shape
-
-        # 将output变成 batch_size * timestep, hidden_dim
-        output = output.reshape(-1, hidden_size)
-
-        # 全连接层
-        output = self.fc(output)  # 形状为batch_size * timestep, 1
-
-        # 转换维度，用于输出
-        output = output.reshape(timestep, batch_size, -1)
-
-        # 我们只需要返回最后一个时间片的数据即可
-        return output[-1]
+    def forward(self, inputs):
+        return self.model(inputs, self.device)

@@ -30,6 +30,7 @@ def getDataset(
     path="./data/wind_dataset.csv",
     transforms=None,
     timestep=1,
+    istest=False,
     test_persent=0.2,
 ):
     df = pd.read_csv(path, index_col=0)
@@ -37,11 +38,5 @@ def getDataset(
     if transforms is not None:
         data = transforms(data)
 
-    train_length = int(len(data) * (1 - test_persent))
-    train_data = data[:train_length]
-    test_data = data[train_length:]
-
-    train_Dataset = WindDataset(data=train_data, timestep=timestep)
-    test_Dataset = WindDataset(data=test_data, timestep=timestep)
-
-    return train_Dataset, test_Dataset
+    dataset = WindDataset(timestep=5)
+    return dataset

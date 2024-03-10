@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader
 from dataset import WindDataset, getDataset
 from sklearn.preprocessing import MinMaxScaler
-from model import ApplyModel, GRU
+from model import ApplyModel
 from tqdm import tqdm
 
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ class Config:
     hidden_size = 128  # 隐层大小
     output_size = 1  # 由于是单输出任务，最终输出层大小为1，预测未来1天风速
     num_layers = 2  # gru的层数
-    epochs = 10  # 迭代轮数
+    epochs = 1  # 迭代轮数
     best_loss = 0  # 记录损失
     learning_rate = 0.0003  # 学习率
     model_name = "gru"  # 模型名称
@@ -27,13 +27,14 @@ class Config:
 
 config = Config()
 
-# scaler = MinMaxScaler()
-
-train_dataset, test_dataset = getDataset(transforms=None, timestep=config.timestep)
+scaler = MinMaxScaler()
+train_dataset, test_dataset = getDataset(
+    transforms=scaler.fit_transform, timestep=config.timestep
+)
 train_data = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
 test_data = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
-"""
+
 model = ApplyModel(
     input_size=config.feature_size,
     hidden_size=config.hidden_size,
@@ -41,17 +42,9 @@ model = ApplyModel(
     num_layers=config.num_layers,
     device=config.device,
 )
-"""
-model = GRU(
-    feature_size=config.feature_size,
-    hidden_size=config.hidden_size,
-    num_layers=config.num_layers,
-    output_size=config.output_size,
-).to(config.device)
-
 
 loss_fn = torch.nn.MSELoss()
-optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
 for epoch in range(config.epochs):
     model.train()
@@ -87,7 +80,7 @@ for epoch in range(config.epochs):
 
 print("Finished Training")
 
-"""
+
 target_data = test_dataset.data
 target_data = scaler.inverse_transform(target_data)
 input_percent = 0.8
@@ -102,7 +95,6 @@ y_pred_list = []
 
 predicted_percent = tqdm(range(predicts_length))
 for i in predicted_percent:
-    inputs = inputs[:, -1 - config.timestep : -1, :]
     y = model(inputs)
     # y [batch, feature]
     y_pred_list.append(y.cpu().detach().numpy())
@@ -119,19 +111,6 @@ predicted_linespace = np.arange(len(predicted_data))
 
 plt.figure(figsize=(12, 8))
 plt.plot(target_linespace, target_data, "b")
-plt.plot(predicted_linespace, predicted_data, "r")
+plt.plot(target_linespace, predicted_data, "r")
 plt.legend()
 plt.show()
-"""
-
-
-for target_x, target_y in test_data:
-    target_x = target_x.to(config.device)
-    target_y = target_y.to(config.device)
-    y_pred = model(target_x)
-    plt.figure(figsize=(12, 8))
-    plt.plot(y_pred.cpu().detach().numpy(), "b")
-    plt.plot(target_y.cpu().detach().numpy().reshape(-1, 1), "r")
-    plt.legend()
-    plt.show()
-    break
